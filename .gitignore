@@ -1,0 +1,43 @@
+# Mídia fica fora do git (vídeo, áudio, imagem, render)
+*.mp4
+*.mov
+*.m4v
+*.webm
+*.mkv
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.gif
+
+# Pastas de trabalho de cada vídeo
+videos/*/bruto/
+videos/*/trabalho/
+videos/*/final/
+videos/_entrada/*
+!videos/_entrada/LEIA.md
+
+# Cópias de logo e fontes que o gerador faz dentro de cada composição
+**/composicao/assets/marca/
+
+# Dependências, ambientes e caches
+node_modules/
+.venv/
+.cache/
+.hyperframes/
+renders/
+.thumbnails/
+*.log
+.DS_Store
+
+# Chaves e segredos
+.env
+.env.*
+
+# Saídas do exemplo
+exemplo/trabalho/
+exemplo/final/

@@ -1,0 +1,3 @@
+# Ambiente da limpeza de voz (opcional). Veja o INSTALACAO.md, seção "Limpeza de voz".
+clearvoice==0.1.2
+torch==2.15.0

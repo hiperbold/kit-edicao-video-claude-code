@@ -1,0 +1,9 @@
+# Nomes e siglas que o Whisper costuma errar. Copie este arquivo para nomes.txt e edite.
+# Uma linha por item:
+#   Nome Certo                       entra na dica que o Whisper recebe (ajuda ele a acertar)
+#   grafia errada => Nome Certo      troca a grafia errada pela certa na saída (sem diferenciar maiúscula)
+#   errada 1|errada 2 => Nome Certo  várias grafias erradas de uma vez (só troca palavra inteira)
+Minha Marca
+Claude
+cloud => Claude
+minha marka|minha marca => Minha Marca

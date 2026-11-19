@@ -1,0 +1,13 @@
+{
+  "name": "kit-edicao-video-claude-code",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kit para editar vídeos verticais (Reels, Shorts) com o Claude Code e o HyperFrames",
+  "license": "MIT",
+  "scripts": {
+    "hf": "hyperframes"
+  },
+  "devDependencies": {
+    "hyperframes": "0.9.16"
+  }
+}

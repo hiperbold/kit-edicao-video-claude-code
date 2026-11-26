@@ -18,7 +18,7 @@ winget install Microsoft.PowerShell
 ```
 
 - **Node.js 24:** baixe o instalador em nodejs.org (versão 24.x).
-- **Placa NVIDIA (opcional):** instale o driver mais recente. Com ela, a transcrição e a limpeza de voz ficam muito mais rápidas. Sem ela, tudo funciona no processador, só mais devagar.
+- **Placa NVIDIA (opcional):** instale o driver mais recente (nvidia.com/drivers) e reinicie. Com ela, a transcrição e a limpeza de voz ficam muito mais rápidas. Sem ela, tudo funciona no processador, só mais devagar. Cada família (GTX 10xx, GTX 16xx, RTX 20xx a 40xx, RTX 50xx) tem um ajuste próprio: veja `guias/placa-de-video.md`. Placa AMD ou Intel: o kit usa o processador.
 - Feche e abra o PowerShell e confira: `git --version`, `node --version`, `ffmpeg -version`, `python --version`.
 
 ### Mac
@@ -94,11 +94,14 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install faster-whisper numpy
 ```
 
-**Só no Windows com placa NVIDIA**, acrescente as bibliotecas de GPU:
+**Só no Windows com placa NVIDIA**, acrescente as bibliotecas de GPU e rode o diagnóstico:
 
 ```powershell
 .venv\Scripts\python.exe -m pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
+.venv\Scripts\python.exe ferramentas\placa.py
 ```
+
+O `placa.py` mostra a placa, a memória de vídeo, a família e o modelo e a precisão que o kit vai usar. Tem de aparecer "faster-whisper enxerga a placa: sim". Com menos de 4 GB de memória de vídeo, use `-Modelo medium` ou `-Modelo small` no `transcrever.ps1`. Tabela completa em `guias/placa-de-video.md`.
 
 Na primeira transcrição, o modelo `large-v3` baixa sozinho (alguns GB). Depois fica guardado no computador.
 
@@ -124,7 +127,7 @@ Os scripts procuram o Python do kit em `.venv`. Para usar outro, defina a variá
 cp marca.exemplo.json marca.json      # Windows: copy marca.exemplo.json marca.json
 ```
 
-Edite o `marca.json` (nome, cores, fontes, logo, texto do cartão final). Ponha o logo (SVG branco, para fundo escuro) e as fontes na pasta `marca/`. O exemplo usa Assistant e Inter, gratuitas em fonts.google.com: baixe e coloque os arquivos em `marca/fontes/` com os nomes que estão no `marca.json`. Sem os arquivos de fonte, o vídeo sai com Arial e o gerador avisa no terminal.
+Edite o `marca.json` (nome, cores, fontes, logo, texto do cartão final). Se você já tem um design system pronto (ou várias marcas), use a pasta `design-systems/` em vez disso: o `marca.json` da raiz fica só com `{"designSystem": "<nome>"}` (e o que quiser trocar por cima), porque tudo o que estiver nele vale sobre o design system. `design-systems/LEIA.md` explica. Ponha o logo (SVG branco, para fundo escuro) e as fontes na pasta `marca/`. O exemplo usa Assistant e Inter, gratuitas em fonts.google.com: baixe e coloque os arquivos em `marca/fontes/` com os nomes que estão no `marca.json`. Sem os arquivos de fonte, o vídeo sai com Arial e o gerador avisa no terminal.
 
 ## 6. Limpeza de voz (opcional)
 
@@ -142,14 +145,20 @@ python3.12 -m venv ferramentas/voz/.venv
 ferramentas/voz/.venv/bin/python -m pip install -r ferramentas/voz/requirements.txt
 ```
 
-Com placa NVIDIA no Windows, troque o torch pelo da mesma versão com CUDA: abra pytorch.org, escolha a versão 2.15.0 e o CUDA mais novo da lista, copie o endereço do `--index-url` que a página mostrar e rode:
+Com placa NVIDIA no Windows, troque o torch pelo da mesma versão com CUDA. Abra pytorch.org, escolha a versão 2.15.0 e o CUDA certo para a sua placa:
+
+- **RTX 20xx a 40xx e GTX 16xx:** o CUDA mais novo da lista.
+- **RTX 50xx:** CUDA 12.8 ou mais novo.
+- **GTX 10xx:** o CUDA mais novo; se o teste abaixo der aviso "sm_61 is not compatible", troque por uma opção de CUDA mais antiga (12.6 ou anterior) ou use a limpeza de voz no processador.
+
+Copie o endereço do `--index-url` que a página mostrar e rode:
 
 ```powershell
 ferramentas\voz\.venv\Scripts\python.exe -m pip install --force-reinstall torch==2.15.0 --index-url <endereço do pytorch.org>
 ferramentas\voz\.venv\Scripts\python.exe -c "import torch; print(torch.cuda.is_available())"
 ```
 
-Tem de imprimir `True`. Uso:
+Tem de imprimir `True`. Se imprimir `False` ou um aviso como "sm_XX is not compatible", o CUDA escolhido não serve para a sua placa: veja `guias/placa-de-video.md`. Uso:
 
 ```powershell
 ferramentas\voz\.venv\Scripts\python.exe ferramentas\voz\clearvoice_limpar.py entrada.wav saida.wav
@@ -161,9 +170,17 @@ Na primeira vez o modelo (cerca de 211 MB) baixa sozinho para `~/.cache/clearvoi
 
 Siga o `exemplo/README.md`: ele gera um vídeo de teste com o FFmpeg, monta a composição, roda o `check` e gera a capa. Se o `check` terminar com zero erro, o ambiente está pronto.
 
-## 8. Chaves de API (só se for usar)
+## 8. Magnific: locução e imagens com IA (opcional)
 
-Só para serviços de vídeo com IA, se um dia você quiser. Guarde as chaves num arquivo `.env` **fora** desta pasta (por exemplo, na pasta `.claude` do seu usuário). Nunca dentro do projeto, porque a pasta pode ir para o git. O Claude só gera algo pago depois de você dizer "pode".
+Para gerar locução ou imagens. É pago, com os créditos da **sua** conta do Magnific; o kit não traz conta nem chave. Conecte uma vez, no terminal:
+
+```bash
+claude mcp add --transport http magnific https://mcp.magnific.com
+```
+
+Na primeira geração, o navegador abre para você entrar na sua conta. Não há chave para copiar. Quem prefere a API com chave própria: guarde `MAGNIFIC_API_KEY` num arquivo `.env` **fora** desta pasta (por exemplo, na pasta `.claude` do seu usuário), nunca dentro do projeto. Tudo em `guias/magnific.md`. O Claude só gera algo pago depois de dizer o custo e você responder "pode".
+
+Outros serviços com chave (vídeo com IA, avatar): a mesma regra, chave só no `.env` fora da pasta.
 
 ## Problemas comuns
 
@@ -171,4 +188,6 @@ Só para serviços de vídeo com IA, se um dia você quiser. Guarde as chaves nu
 - **`pwsh` não encontrado (Windows):** feche e abra o terminal depois do `winget install Microsoft.PowerShell`.
 - **Falta de Chrome no render ou na capa:** rode `npx hyperframes browser ensure` de novo.
 - **Transcrição lenta:** conferir se aparece "em cuda". Sem placa NVIDIA, é normal ser lenta; use `--modelo medium` ou `--modelo small`.
-- **Erro com a placa NVIDIA (Windows):** atualize o driver e confira o `pip install nvidia-cublas-cu12 nvidia-cudnn-cu12` do passo 4. Para seguir sem placa: `--device cpu`.
+- **Erro com a placa NVIDIA (Windows):** atualize o driver, confira o `pip install nvidia-cublas-cu12 nvidia-cudnn-cu12` do passo 4 e rode o `placa.py`. Para seguir sem placa: `-Device cpu` no `transcrever.ps1`.
+- **Transcrição com texto repetido ou vazio numa GTX:** `$env:KIT_WHISPER_TIPO="int8"` e transcreva de novo (`guias/placa-de-video.md`).
+- **`bash: \r: command not found` no Mac:** o arquivo `.sh` foi salvo com fim de linha do Windows. Baixe o kit de novo pelo `git clone` (o `.gitattributes` corrige) em vez de copiar a pasta do Windows.

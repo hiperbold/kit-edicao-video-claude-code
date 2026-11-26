@@ -41,3 +41,17 @@ renders/
 # Saídas do exemplo
 exemplo/trabalho/
 exemplo/final/
+
+# Logos, fontes e referências de marca e de design system vão para o git (são a marca, não mídia de vídeo).
+# Design system de cliente ou com fonte paga: ignore a pasta dele aqui (veja design-systems/LEIA.md).
+!marca/**/*.png
+!marca/**/*.jpg
+!marca/**/*.jpeg
+!marca/**/*.webp
+!marca/**/*.gif
+!design-systems/**/*.png
+!design-systems/**/*.jpg
+!design-systems/**/*.jpeg
+!design-systems/**/*.webp
+!design-systems/**/*.gif
+__pycache__/

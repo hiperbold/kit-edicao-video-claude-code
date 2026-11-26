@@ -24,6 +24,46 @@ def preparar_cuda_windows():
             os.environ["PATH"] = p + os.pathsep + os.environ.get("PATH", "")
 
 
+def info_placa():
+    """Nome e memória (GB) da primeira placa NVIDIA, pelo nvidia-smi (vem com o driver). ("", 0) se não houver."""
+    import shutil
+    import subprocess
+
+    exe = shutil.which("nvidia-smi")
+    if not exe:
+        return "", 0.0
+    try:
+        r = subprocess.run([exe, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"],
+                           capture_output=True, text=True, timeout=10)
+        linha = r.stdout.strip().splitlines()[0] if r.returncode == 0 and r.stdout.strip() else ""
+        nome, _, mem = linha.rpartition(",")
+        return nome.strip(), float(mem) / 1024
+    except Exception:
+        return "", 0.0
+
+
+def escolher_tipo(device):
+    """Precisão do modelo conforme a placa (detalhes em guias/placa-de-video.md).
+    RTX (20xx em diante) e placas de estação (A, Quadro RTX) com 6 GB ou mais: float16.
+    Placa GTX (10xx, 16xx) ou com menos de 6 GB de memória: int8 (mais leve e mais seguro nessas placas).
+    Processador: int8. Para forçar outro, defina KIT_WHISPER_TIPO (ex.: int8, float16, int8_float16, float32)."""
+    if device != "cuda":
+        return "int8"
+    nome, mem = info_placa()
+    if "GTX" in nome.upper() or 0 < mem < 6:
+        return "int8"
+    try:
+        import ctranslate2
+
+        aceitos = ctranslate2.get_supported_compute_types("cuda")
+    except Exception:
+        return "int8"
+    for t in ("float16", "int8_float16", "int8"):
+        if t in aceitos:
+            return t
+    return "float32"
+
+
 def carregar_modelo(modelo="large-v3", device="auto"):
     """device: auto (placa NVIDIA se houver, senão processador), cuda ou cpu."""
     preparar_cuda_windows()
@@ -36,7 +76,7 @@ def carregar_modelo(modelo="large-v3", device="auto"):
             device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
         except Exception:
             device = "cpu"
-    tipo = "float16" if device == "cuda" else "int8"
+    tipo = os.environ.get("KIT_WHISPER_TIPO") or escolher_tipo(device)
     print(f"modelo {modelo} em {device} ({tipo})", file=sys.stderr)
     return WhisperModel(modelo, device=device, compute_type=tipo, download_root=os.environ.get("HF_HOME"))
 

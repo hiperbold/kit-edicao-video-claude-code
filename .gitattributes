@@ -1,0 +1,26 @@
+# Mesmo arquivo no Windows e no Mac: o git ajusta o fim de linha sozinho.
+* text=auto
+# Scripts do Mac/Linux precisam de LF (com CRLF o bash falha com "\r: command not found").
+*.sh text eol=lf
+*.py text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+# Scripts do PowerShell: CRLF, o padrão do Windows.
+*.ps1 text eol=crlf
+# Mídia e fontes nunca são texto.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.mp4 binary
+*.mov binary
+*.wav binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary

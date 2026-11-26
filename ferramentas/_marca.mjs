@@ -10,9 +10,32 @@ export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export function lerMarca() {
   for (const nome of ['marca.json', 'marca.exemplo.json']) {
     const p = path.join(RAIZ, nome);
-    if (fs.existsSync(p)) return { marca: JSON.parse(fs.readFileSync(p, 'utf8')), origem: nome };
+    if (!fs.existsSync(p)) continue;
+    const marca = JSON.parse(fs.readFileSync(p, 'utf8'));
+    if (!marca.designSystem) return { marca, origem: nome };
+    return { marca: lerDesignSystem(marca), origem: `${nome} + design-systems/${marca.designSystem}` };
   }
   throw new Error('Não achei marca.json nem marca.exemplo.json na raiz do projeto: ' + RAIZ);
+}
+
+// marca.json com "designSystem": "<nome>" usa design-systems/<nome>/marca.json como base.
+// Os caminhos de logo e fontes de lá são relativos à pasta do design system; aqui viram relativos à raiz.
+// O que estiver no marca.json da raiz (fora "designSystem") vale por cima: cores, cartaoFinal etc.
+function lerDesignSystem(raiz) {
+  const pasta = path.posix.join('design-systems', raiz.designSystem);
+  const arq = path.join(RAIZ, pasta, 'marca.json');
+  if (!fs.existsSync(arq)) throw new Error(`design system "${raiz.designSystem}" não encontrado: falta ${pasta}/marca.json`);
+  const ds = JSON.parse(fs.readFileSync(arq, 'utf8'));
+  const rel = c => (c ? path.posix.join(pasta, c.replace(/\\/g, '/')) : c);
+  if (ds.logo) ds.logo = rel(ds.logo);
+  for (const f of Object.values(ds.fontes || {})) {
+    for (const peso of Object.keys(f.arquivos || {})) f.arquivos[peso] = rel(f.arquivos[peso]);
+  }
+  const { designSystem, ...extra } = raiz;
+  const junto = { ...ds, ...extra, designSystem };
+  for (const k of ['cores', 'cartaoFinal']) junto[k] = { ...(ds[k] || {}), ...(extra[k] || {}) };
+  junto.fontes = { ...(ds.fontes || {}), ...(extra.fontes || {}) };
+  return junto;
 }
 
 // "#3B82F6" (ou "#38F") -> [59, 130, 246]

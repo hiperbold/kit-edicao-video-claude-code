@@ -1,12 +1,14 @@
 # Transcrição no Windows (faster-whisper, local). Grava ao lado do arquivo: "<nome>.srt" e "<nome> - transcricao.txt".
-# Uso: pwsh -File ferramentas\transcrever.ps1 <audio-ou-video> [idioma, padrão pt] [-Python <python.exe>] [-Nomes nomes.txt]
+# Uso: pwsh -File ferramentas\transcrever.ps1 <audio-ou-video> [idioma, padrão pt] [-Python <python.exe>] [-Nomes nomes.txt] [-Modelo medium] [-Device cpu]
 # Qual Python usar (nesta ordem): parâmetro -Python, variável de ambiente KIT_PYTHON, .venv\Scripts\python.exe na raiz do kit.
-# Usa a placa NVIDIA se houver; senão o processador (mais lento). Veja INSTALACAO.md.
+# Usa a placa NVIDIA se houver; senão o processador (mais lento). Qual modelo e precisão para cada placa: guias/placa-de-video.md.
 param(
   [Parameter(Mandatory=$true)][string]$Arquivo,
   [string]$Idioma = 'pt',
   [string]$Python = '',
-  [string]$Nomes = ''
+  [string]$Nomes = '',
+  [string]$Modelo = '',
+  [string]$Device = ''
 )
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path $PSScriptRoot -Parent
@@ -18,5 +20,7 @@ if (-not (Test-Path -LiteralPath $Python)) {
 $Arquivo = (Resolve-Path -LiteralPath $Arquivo).Path
 $args2 = @((Join-Path $PSScriptRoot 'transcrever.py'), $Arquivo, '--idioma', $Idioma)
 if ($Nomes) { $args2 += @('--nomes', $Nomes) }
+if ($Modelo) { $args2 += @('--modelo', $Modelo) }
+if ($Device) { $args2 += @('--device', $Device) }
 & $Python @args2
 if ($LASTEXITCODE -ne 0) { throw "a transcrição falhou (código $LASTEXITCODE)" }

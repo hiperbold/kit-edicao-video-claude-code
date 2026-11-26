@@ -34,7 +34,7 @@ Grafo longo vai num arquivo e entra com `-filter_complex_script grafo.txt`.
 
 ## 3. HDR do iPhone para SDR (testado)
 
-Na placa (libplacebo, Vulkan):
+Na placa (libplacebo, Vulkan; Windows com o ffmpeg da Gyan e placa com driver em dia. No Mac, use a cadeia do processador abaixo):
 
 ```
 ffmpeg -init_hw_device vulkan -i bruto/<arquivo> -vf "libplacebo=tonemapping=bt.2390:colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv:format=yuv420p" -c:v libx264 -crf 17 trabalho/sdr.mp4
@@ -144,6 +144,9 @@ Para intermediário rápido (cortes, testes):
 
 Entrega final continua em `libx264 -crf 17` (melhor qualidade por tamanho). O HyperFrames já usa a placa no render.
 
+- Funciona em GTX 10xx, GTX 16xx e todas as RTX (tabela em `guias/placa-de-video.md`). Placa sem NVENC ou erro "No capable devices found": volte para `libx264`.
+- No Mac, o equivalente é `-c:v h264_videotoolbox -q:v 65`, também só para intermediário.
+
 ## 10. Quadros e folhas para conferir
 
 ```
@@ -151,6 +154,22 @@ ffmpeg -i entrada.mp4 -vf "fps=1/5,scale=270:-1,tile=6x4" -frames:v 1 folha.jpg
 ```
 
 Cortes de cena: `-vf "select='gt(scene,0.25)',showinfo" -f null -` (o ffmpeg-skill usa `scdet=threshold=8`, que dá o mesmo).
+
+## 11. Locução por cima de um vídeo que já tem trilha (testado)
+
+Para quando o vídeo pronto já tem música (por exemplo, um vídeo de cliente) e entra uma locução gerada (`guias/magnific.md`). A locução vai a -14 LUFS, a trilha abaixa 8 dB fixos e mais um pouco enquanto a voz fala. O vídeo não é recodificado.
+
+```
+ffmpeg -i video.mp4 -i locucao.wav -filter_complex "
+[1:a]aresample=48000,loudnorm=I=-14:TP=-1.5:LRA=7,aformat=channel_layouts=stereo,asplit=2[v][sc];
+[0:a]aresample=48000,aformat=channel_layouts=stereo,volume=0.4[m];
+[m][sc]sidechaincompress=threshold=0.02:ratio=4:attack=30:release=400[md];
+[md][v]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[a]" \
+  -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k -movflags +faststart final/<nome>-locucao.mp4
+```
+
+- Conferir a diferença: a trilha sozinha (mesmo filtro, sem o `amix`) tem de medir uns 10 dB abaixo da locução (`-af ebur128`). No teste: trilha -27 LUFS, voz -15 LUFS.
+- Vídeo sem som: troque a entrada `[0:a]` por uma trilha do `trilha_leve.py` e use a receita 6.
 
 ## Pegadinhas (do ffmpeg-skill, `references/gotchas.md`)
 

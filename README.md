@@ -2,7 +2,9 @@
 
 Um kit para qualquer pessoa editar **Reels, Shorts e vídeos verticais** conversando com o Claude Code, sem precisar saber programar. Você grava o vídeo falando para a câmera, o Claude corta as pausas e os erros, monta a legenda palavra por palavra, os gráficos e o cartão final com a sua marca, e entrega o MP4 pronto (1080x1920, 30 quadros por segundo) mais a capa.
 
-Tudo roda no seu computador. Nenhuma ferramenta daqui cobra assinatura. O único gasto possível é opcional: gerar cenas ou avatares com IA em serviços de terceiros, e isso só acontece se você autorizar.
+Funciona igual no **Windows e no Mac**. No Windows, aproveita a placa de vídeo NVIDIA (GTX ou RTX) quando houver (`guias/placa-de-video.md`).
+
+Tudo roda no seu computador. Nenhuma ferramenta daqui cobra assinatura. O único gasto possível é opcional: gerar locução e imagens com IA no Magnific, com a sua própria conta, e isso só acontece se você autorizar.
 
 ## O que vem no kit
 
@@ -13,9 +15,10 @@ AGENTS.md / CLAUDE.md  as instruções que o Claude Code lê sozinho ao abrir es
 marca.exemplo.json     modelo da sua marca (cores, fontes, logo, texto do cartão final)
 package.json           trava o HyperFrames na versão 0.9.16
 ferramentas/           scripts: transcrição, gerador de Reels, capa, trilha, efeitos, limpeza de voz, receitas de ffmpeg
-guias/                 regras de motion e o estilo "tela dividida"
+guias/                 regras de motion, estilo "tela dividida", placa de vídeo (Windows) e Magnific
 skills/video-cut/      skill de corte e junção de takes (copiar para ~/.claude/skills/)
 marca/                 logo de exemplo; coloque aqui o seu logo e as suas fontes
+design-systems/        design systems prontos, um por pasta (para quem tem uma ou várias marcas)
 exemplo/               um vídeo mínimo de exemplo, para conferir que tudo funcionou
 videos/                seus vídeos (um por pasta, criada pelo Claude)
 ```
@@ -30,6 +33,7 @@ videos/                seus vídeos (um por pasta, criada pelo Claude)
 | FFmpeg | Corta, junta, converte, mede o volume e cola áudio e vídeo | Instalado no sistema |
 | faster-whisper (modelo large-v3) | Transcreve a fala e dá o tempo de cada palavra | Usa a placa NVIDIA se houver; senão o processador (mais lento) |
 | ClearerVoice (MossFormer2) | Limpa ruído de voz | Opcional. Só se a gravação tiver chiado |
+| [Magnific](https://www.magnific.com) (MCP) | Locução (vozes da ElevenLabs) e imagens com IA | Opcional e pago, com a sua conta. Veja `guias/magnific.md` |
 | Node.js e Python | Rodam os scripts do kit | Node 24; Python 3.12 |
 
 ## As skills
@@ -58,14 +62,14 @@ O Claude segue estes passos (estão também no `AGENTS.md`):
 ## Como começar
 
 1. Siga o `INSTALACAO.md` (Windows ou Mac).
-2. Copie `marca.exemplo.json` para `marca.json` e troque nome, cores, fontes e texto do cartão final. Ponha o seu logo (SVG branco) e as suas fontes na pasta `marca/`.
+2. Copie `marca.exemplo.json` para `marca.json` e troque nome, cores, fontes e texto do cartão final. Ponha o seu logo (SVG branco) e as suas fontes na pasta `marca/`. Já tem um design system? Use a pasta `design-systems/` (`design-systems/LEIA.md`).
 3. Rode o `exemplo/` (o `exemplo/README.md` explica) para conferir que tudo funciona.
 4. Abra o Claude Code dentro desta pasta e peça, por exemplo: "Vou gravar um Reel sobre X. Me ajude a montar o storyboard."
 
 ## Segurança e custos
 
 - O vídeo, a voz e as imagens ficam no seu computador (o `.gitignore` impede de irem para o git).
-- Chaves de API (se um dia você usar um serviço de vídeo com IA) ficam só num arquivo `.env` fora desta pasta. Nunca dentro do projeto.
+- O Magnific se conecta com a sua conta (login no navegador, sem chave). Se usar chave de API, ela fica só num arquivo `.env` fora desta pasta. Nunca dentro do projeto.
 - Qualquer gasto com serviço externo só acontece depois do seu "pode", com o valor dito antes.
 
 ## Créditos e licenças

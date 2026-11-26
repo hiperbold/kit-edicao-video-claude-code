@@ -1,0 +1,34 @@
+{
+  "nome": "Marca Exemplo",
+  "cores": {
+    "fundo": "#0B0F1A",
+    "marinho": "#111827",
+    "acento": "#3B82F6",
+    "acao": "#1D4ED8",
+    "creme": "#F5F3EE",
+    "cinza": "#94A3B8"
+  },
+  "fontes": {
+    "titulo": {
+      "familia": "Assistant",
+      "arquivos": {
+        "700": "fontes/Assistant-Bold.ttf",
+        "800": "fontes/Assistant-ExtraBold.ttf"
+      }
+    },
+    "texto": {
+      "familia": "Inter",
+      "arquivos": {
+        "500": "fontes/inter-500.woff2",
+        "700": "fontes/inter-700.woff2",
+        "800": "fontes/inter-800.woff2"
+      }
+    }
+  },
+  "logo": "logos/logo-branco.svg",
+  "cartaoFinal": {
+    "titulo": "Seu CTA aqui",
+    "subtitulo": "no link da bio",
+    "selo": "Link da bio: seu CTA aqui"
+  }
+}

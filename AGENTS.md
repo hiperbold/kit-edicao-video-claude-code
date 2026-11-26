@@ -14,17 +14,19 @@ Leia também `README.md` (visão geral) e `INSTALACAO.md` (ambiente). Este arqui
 ## Estrutura de pastas
 
 ```
-marca.json                  a marca do usuário (cores, fontes, logo, cartão final); modelo em marca.exemplo.json
+marca.json                  a marca em uso (cores, fontes, logo, cartão final) ou {"designSystem": "<nome>"}; modelo em marca.exemplo.json
 nomes.txt                   nomes e siglas que o Whisper erra (opcional; modelo em nomes.exemplo.txt)
-marca/                      logo e fontes da marca
+marca/                      logo e fontes da marca, quando não se usa design system
+design-systems/             design systems prontos, um por pasta (regras em design-systems/LEIA.md)
+  <nome>/                   marca.json, regras.md, logos/, fontes/, referencia/
 ferramentas/                scripts do kit (não editar para um vídeo só)
-guias/                      motion-regras.md e estilo-tela-dividida.md
+guias/                      motion-regras.md, estilo-tela-dividida.md, placa-de-video.md, magnific.md
 skills/video-cut/           skill de corte (a cópia ativa fica em ~/.claude/skills/)
 exemplo/                    vídeo mínimo de exemplo (modelo para criar outros)
 videos/
   _entrada/                 caixa de entrada: o usuário solta aqui o vídeo bruto
   <AAAA-MM-DD>-<assunto>/
-    bruto/                  gravação original (fora do git)
+    bruto/                  gravação original (fora do git); bruto/gerado/ para o que veio do Magnific
     trabalho/               intermediários: cortes, áudios, renders de teste, quadros (fora do git)
     final/                  vídeo exportado, .srt e capa (fora do git)
     composicao/             projeto HyperFrames: gerar.mjs, corte.json, capa.json, hyperframes.json, assets/
@@ -34,6 +36,34 @@ videos/
 Nome de pasta de vídeo: data em que começou + assunto em minúsculas com hífen, sem acentos.
 
 **Regra fixa: nenhum caminho absoluto** em arquivo do projeto (nada que comece pela letra do disco no Windows ou pela pasta do usuário no Mac). Escreva caminhos a partir da pasta do projeto (`videos/<pasta>/final/`). O que fica fora da pasta (temporários, chaves, caches) se cita pelo nome.
+
+## Windows e Mac
+
+O kit é o mesmo nos dois sistemas. Para continuar assim:
+
+- **Nome de pasta e de arquivo** (vídeo, design system, asset): minúsculas, números e hífen. Sem acento, espaço, `:` `?` `*` `"` `<` `>` `|`, e sem dois nomes que só mudam em maiúscula (`Logo.svg` e `logo.svg`): o Windows não diferencia e o Mac sim.
+- **Caminho nos arquivos do projeto** (`marca.json`, `corte.json`, `storyboard.md`, `gerar.mjs`) sempre com barra normal `/`. Funciona nos dois. Barra invertida só em comando digitado no PowerShell.
+- **Script novo** que o usuário roda direto: em Python ou Node (rodam igual nos dois). Script de terminal tem de existir nas duas versões, `.ps1` (Windows) e `.sh` (Mac), como `transcrever` e `sfx`.
+- **Fim de linha:** o `.gitattributes` cuida (`.sh` sempre com LF, `.ps1` com CRLF). Não mude.
+- **Antes de rodar um comando, veja o sistema** e use a coluna certa:
+
+| Tarefa | Windows (PowerShell) | Mac (Terminal) |
+|---|---|---|
+| Python do kit | `.venv\Scripts\python.exe` | `.venv/bin/python` |
+| Python da limpeza de voz | `ferramentas\voz\.venv\Scripts\python.exe` | `ferramentas/voz/.venv/bin/python` |
+| Transcrever | `pwsh -File ferramentas\transcrever.ps1 <arquivo>` | `ferramentas/transcrever.sh <arquivo>` |
+| Efeitos sonoros | `pwsh -File ferramentas\sfx.ps1 <pasta>` | `ferramentas/sfx.sh <pasta>` |
+| Diagnóstico da placa | `.venv\Scripts\python.exe ferramentas\placa.py` | não precisa (Mac usa o processador) |
+| Copiar arquivo | `Copy-Item a b` | `cp a b` |
+| Apagar pasta (faxina) | `Remove-Item -Recurse -Force <pasta>` | `rm -rf <pasta>` |
+| HDR para SDR | receita 3, na placa (libplacebo) | receita 3, cadeia do processador |
+| Codificar intermediário rápido | `h264_nvenc` (receita 9) | `h264_videotoolbox` (receita 9) |
+
+`node`, `npx hyperframes` e `ffmpeg` são iguais nos dois.
+
+## Placa de vídeo (Windows)
+
+No Windows, antes da primeira transcrição ou limpeza de voz, rode o diagnóstico da placa (tabela acima) e siga `guias/placa-de-video.md`: ele diz, para cada família (GTX 10xx, GTX 16xx, RTX 20xx a 40xx, RTX 50xx), o modelo do Whisper, a precisão, o CUDA do torch e o codificador do ffmpeg. Diga ao usuário em uma linha qual placa ele tem e o que isso muda. O `transcrever` já escolhe a precisão sozinho (`int8` nas GTX, `float16` nas RTX). Uma tarefa pesada por vez na placa: transcrição, limpeza de voz e render do HyperFrames juntos estouram a memória de placas de 8 GB ou menos.
 
 ## Fluxo de um vídeo
 
@@ -74,9 +104,16 @@ Todo Reel tem a sua capa. Arquivo 1080x1920, mas texto, logo e foto ficam **todo
 - Rosto: um quadro do próprio vídeo (`ffmpeg -ss <tempo> -i <video> -frames:v 1 -q:v 2 composicao/assets/img/capa-rosto.jpg`), em janela com cantos arredondados (nunca recortado flutuando).
 - O gerador usa o Chrome do HyperFrames; se faltar, `npx hyperframes browser ensure`.
 
-## Marca
+## Marca e design system
 
-Cores, fontes, logo e texto do cartão final vêm do `marca.json` da raiz (se não existir, do `marca.exemplo.json`, e avise o usuário de que ainda está usando o modelo). O `reels.mjs` e o `capa.mjs` copiam logo e fontes para `composicao/assets/marca/` sozinhos. Fonte que não existe vira aviso no terminal e o vídeo sai com Arial: avise o usuário.
+Cores, fontes, logo e texto do cartão final vêm do `marca.json` da raiz (se não existir, do `marca.exemplo.json`, e avise o usuário de que ainda está usando o modelo).
+
+**Design system pronto:** com `"designSystem": "<nome>"` no `marca.json`, a marca vem de `design-systems/<nome>/marca.json`, e o resto do `marca.json` da raiz vale por cima. Estrutura e como trazer um design system que já existe: `design-systems/LEIA.md`.
+
+- Antes do storyboard, leia `design-systems/<nome>/regras.md` e olhe as peças de `referencia/`. Siga o design system: cor de cada papel, tipografia, uso do logo, tom. Se ele não diz algo, use `guias/motion-regras.md`.
+- Anote no `storyboard.md` qual design system o vídeo usa.
+- Design system novo: crie a pasta copiando `design-systems/exemplo/` e preencha com o usuário. Nada de cor ou fonte inventada: o que faltar, pergunte.
+- Se o usuário tem mais de uma marca (cliente, linha de produto), um design system por marca, e o `designSystem` muda a cada vídeo. O `reels.mjs` e o `capa.mjs` copiam logo e fontes para `composicao/assets/marca/` sozinhos. Fonte que não existe vira aviso no terminal e o vídeo sai com Arial: avise o usuário.
 
 ## Som
 
@@ -88,6 +125,7 @@ Cores, fontes, logo e texto do cartão final vêm do `marca.json` da raiz (se n�
 ## Gasto e chaves
 
 - Qualquer serviço pago (geração de vídeo ou avatar com IA, voz, banco de imagens): **diga antes quantas gerações e o custo estimado e espere o "pode"** do usuário. Nada é contratado ou gasto sem isso.
+- **Locução e imagem com IA: pelo Magnific**, seguindo `guias/magnific.md` (conectar a conta, custo antes, teste com uma peça, encaixar a locução nas cenas, conferir). Cada usuário conecta a própria conta do Magnific: o kit não traz chave nem conta. Se as ferramentas do Magnific não estiverem disponíveis, mostre ao usuário a seção 1 do guia.
 - **Chaves de API ficam só num arquivo `.env` fora da pasta do projeto** (por exemplo, na pasta `.claude` do usuário). Nunca no repositório, no `storyboard.md`, no `marca.json` nem no chat. O `.gitignore` já ignora `.env`, mas não conte só com ele.
 - Material gerado por IA entra em `videos/<pasta>/bruto/gerado/<nn>-<tipo>.mp4`, com um `<nn>-<tipo>.md` ao lado (serviço, modelo, instrução usada, duração, custo cobrado).
 
@@ -112,10 +150,11 @@ Script descartável, JSON de teste, render de rascunho e qualquer coisa que não
 | Node | 24.x | |
 | Python | 3.12 | ambientes `.venv/` (Whisper, numpy) e `ferramentas/voz/.venv/` (limpeza de voz) |
 | FFmpeg / FFprobe | 8.1 (Windows, build completo da Gyan) | no Mac, o do Homebrew pode vir sem o filtro `drawtext`: texto na tela vai sempre pela composição do HyperFrames |
-| faster-whisper | `large-v3` | placa NVIDIA se houver, senão processador |
+| faster-whisper | `large-v3` | placa NVIDIA se houver, senão processador; precisão por família em `guias/placa-de-video.md` |
+| Magnific (opcional) | MCP `https://mcp.magnific.com` | conta própria do usuário; locução `eleven_v4`; veja `guias/magnific.md` |
 | GSAP | 3.12.5, da CDN jsdelivr | o render precisa de internet |
 
 Decisões do kit:
 - Texto na tela só pelo HyperFrames, nunca pelo `drawtext` do ffmpeg, para o resultado sair igual em qualquer computador.
-- Sem TTS nem música gerada por modelo de IA no kit; trilha e efeitos são sintetizados pelos scripts.
+- Trilha e efeitos são sintetizados pelos scripts. Locução e imagem com IA, só pelo Magnific com a conta do usuário (`guias/magnific.md`); música gerada por IA, não.
 - Skills `hyperframes-*`, `motion-graphics`, `graphic-overlays`, `embedded-captions` e `media-use` são do ecossistema do HyperFrames (`npx hyperframes skills`); a `video-cut` é deste kit.
